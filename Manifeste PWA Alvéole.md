@@ -1,0 +1,25 @@
+{
+  "name": "Alvéole — Gestion Terrain EI",
+  "short_name": "Alvéole",
+  "description": "Application terrain pour technicien itinérant EI (interventions, contacts, itinéraires, historique et factures).",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#09090B",
+  "theme_color": "#09090B",
+  "icons": [
+    {
+      "src": "alveole-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "alveole-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
