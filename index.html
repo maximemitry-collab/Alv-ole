@@ -3804,5 +3804,16 @@ url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMExce
         .replace(/"/g, '&quot;');
     }
   </script>
-
+<script>
+(function () {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = 'Devis & Factures';
+  btn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9999;background:#FACC15;color:#09090B;font-weight:800;border:none;border-radius:12px;padding:10px 14px;box-shadow:0 8px 20px rgba(0,0,0,0.4);cursor:pointer;';
+  btn.onclick = function () {
+    window.open('alveole-devis-factures.html', '_blank');
+  };
+  document.body.appendChild(btn);
+})();
+</script>
 </body></html>
