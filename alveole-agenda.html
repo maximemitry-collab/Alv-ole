@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alvéole — Agenda Interventions</title>
+  <style>
+    /* Design tokens et palette claire fond blanc avec accents jaune et noir Alvéole */
+    :root {
+      --bg-main: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --bg-elevated: #F8FAFC;
+      --bg-hover: #F1F5F9;
+      --text-main: #111827;
+      --text-muted: #4B5563;
+      --accent: #FACC15;
+      --accent-dark: #111827;
+      --accent-soft: rgba(250, 204, 21, 0.22);
+      --border: #E5E7EB;
+      --border-strong: #CBD5E1;
+      --todo-bg: rgba(239, 68, 68, 0.14);
+      --todo-text: #B91C1C;
+      --todo-border: #EF4444;
+      --progress-bg: rgba(249, 115, 22, 0.14);
+      --progress-text: #C2410C;
+      --progress-border: #F97316;
+      --done-bg: rgba(34, 197, 94, 0.14);
+      --done-text: #15803D;
+      --done-border: #22C55E;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      line-height: 1.45;
+    }
+
+    .agenda-wrapper {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 18px 14px 80px;
+      background-color: var(--bg-main);
+    }
+
+    .agenda-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04);
+    }
+
+    .agenda-title h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--accent-dark);
+    }
+
+    .agenda-title p {
+      margin: 3px 0 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .view-switcher {
+      display: inline-flex;
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .view-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.84rem;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .view-btn.active {
+      background-color: var(--accent);
+      color: var(--accent-dark);
+    }
+
+    .nav-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid var(--border-strong);
+      background-color: var(--bg-elevated);
+      color: var(--accent-dark);
+      border-radius: 10px;
+      padding: 7px 12px;
+      font-size: 0.83rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: var(--bg-hover);
+    }
+
+    .btn-accent {
+      border: 1px solid var(--accent-dark);
+      background-color: var(--accent);
+      color: var(--accent-dark);
+      font-weight: 800;
+    }
+
+    .current-period-label {
+      font-size: 0.98rem;
+      font-weight: 900;
+      color: var(--accent-dark);
+      background-color: var(--accent-soft);
+      padding: 4px 10px;
+      border-radius: 8px;
+      text-transform: capitalize;
+    }
+
+    .panel {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(17, 24, 39, 0.04);
+    }
+
+    .month-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 8px;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .month-cell {
+      min-height: 92px;
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 7px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .month-cell.other-month {
+      opacity: 0.45;
+    }
+
+    .month-cell.today {
+      border-color: var(--accent-dark);
+      background-color: #FFFBEB;
+      box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    .month-day-num {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--accent-dark);
+    }
+
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 860px) {
+      .week-grid {
+        grid-template-columns: 1fr;
+      }
+      .month-grid, .month-weekdays {
+        gap: 4px;
+      }
+      .month-cell {
+        min-height: 70px;
+        padding: 5px;
+      }
+    }
+
+    .week-col {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px;
+      min-height: 150px;
+    }
+
+    .week-col.today {
+      border-color: var(--accent-dark);
+      background-color: #FFFBEB;
+    }
+
+    .week-col-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--accent-dark);
+    }
+
+    .week-lines-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .week-intervention-line {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--todo-border);
+      border-radius: 9px;
+      padding: 7px 9px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .week-intervention-line:hover {
+      background-color: var(--bg-hover);
+    }
+
+    .week-intervention-line.status-todo {
+      border-left-color: var(--todo-border);
+      background-color: rgba(239, 68, 68, 0.05);
+    }
+
+    .week-intervention-line.status-progress {
+      border-left-color: var(--progress-border);
+      background-color: rgba(249, 115, 22, 0.05);
+    }
+
+    .week-intervention-line.status-done {
+      border-left-color: var(--done-border);
+      background-color: rgba(34, 197, 94, 0.05);
+    }
+
+    .week-line-top {
+      font-size: 0.77rem;
+      font-weight: 800;
+      color: var(--accent-dark);
+    }
+
+    .week-line-time {
+      color: var(--accent-dark);
+      background-color: var(--accent);
+      padding: 1px 5px;
+      border-radius: 5px;
+      margin-right: 4px;
+      font-size: 0.72rem;
+    }
+
+    .week-intervention-line.status-todo .week-line-time {
+      color: var(--todo-text);
+      background-color: var(--todo-bg);
+    }
+
+    .week-intervention-line.status-progress .week-line-time {
+      color: var(--progress-text);
+      background-color: var(--progress-bg);
+    }
+
+    .week-intervention-line.status-done .week-line-time {
+      color: var(--done-text);
+      background-color: var(--done-bg);
+    }
+
+    .week-line-address {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+
+    .month-capsule {
+      display: inline-block;
+      max-width: 100%;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background-color: var(--todo-bg);
+      color: var(--todo-text);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+
+    .month-capsule.status-todo {
+      background-color: var(--todo-bg);
+      color: var(--todo-text);
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .month-capsule.status-progress {
+      background-color: var(--progress-bg);
+      color: var(--progress-text);
+      border-color: rgba(249, 115, 22, 0.35);
+    }
+
+    .month-capsule.status-done {
+      background-color: var(--done-bg);
+      color: var(--done-text);
+      border-color: rgba(34, 197, 94, 0.35);
+    }
+
+    .day-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .intervention-card {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--todo-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .intervention-card:hover {
+      background-color: var(--bg-hover);
+    }
+
+    .intervention-card.status-todo {
+      border-left-color: var(--todo-border);
+    }
+
+    .intervention-card.status-progress {
+      border-left-color: var(--progress-border);
+    }
+
+    .intervention-card.status-done {
+      border-left-color: var(--done-border);
+    }
+
+    .intervention-title {
+      font-weight: 800;
+      font-size: 0.94rem;
+      color: var(--accent-dark);
+    }
+
+    .intervention-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .badge-status {
+      align-self: flex-start;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 800;
+      background-color: var(--todo-bg);
+      color: var(--todo-text);
+    }
+
+    .badge-status.status-todo {
+      background-color: var(--todo-bg);
+      color: var(--todo-text);
+    }
+
+    .badge-status.status-progress {
+      background-color: var(--progress-bg);
+      color: var(--progress-text);
+    }
+
+    .badge-status.status-done {
+      background-color: var(--done-bg);
+      color: var(--done-text);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px 12px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .detail-box {
+      margin-top: 14px;
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 14px;
+      display: none;
+    }
+
+    .detail-box.visible {
+      display: block;
+    }
+
+    .detail-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="agenda-wrapper" id="alveoleAgendaApp">
+    <header class="agenda-header">
+      <div class="agenda-title">
+        <h1>Agenda des Interventions</h1>
+        <p>Synchronisé avec vos interventions (vue Jour, Semaine et Mois)</p>
+      </div>
+      <div class="view-switcher" role="tablist" aria-label="Choisir la vue de l'agenda">
+        <button type="button" class="view-btn" data-view="day" id="btnViewDay">Jour</button>
+        <button type="button" class="view-btn active" data-view="week" id="btnViewWeek">Semaine</button>
+        <button type="button" class="view-btn" data-view="month" id="btnViewMonth">Mois</button>
+      </div>
+    </header>
+
+    <div class="nav-bar">
+      <div class="nav-controls">
+        <button type="button" class="btn" id="btnPrevPeriod" aria-label="Période précédente">◀</button>
+        <button type="button" class="btn btn-accent" id="btnToday">Aujourd'hui</button>
+        <button type="button" class="btn" id="btnNextPeriod" aria-label="Période suivante">▶</button>
+      </div>
+      <div class="current-period-label" id="currentPeriodLabel">—</div>
+      <button type="button" class="btn" id="btnRefreshInterventions">↻ Actualiser</button>
+    </div>
+
+    <section class="panel" aria-live="polite">
+      <div id="agendaCalendarContent"></div>
+
+      <div class="detail-box" id="interventionDetailBox">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+          <div>
+            <div style="font-size:1rem;font-weight:900;color:#111827;" id="detailTitle">—</div>
+            <div style="font-size:0.82rem;color:#4B5563;margin-top:2px;" id="detailSub">—</div>
+          </div>
+          <button type="button" class="btn" id="btnCloseDetail">Fermer</button>
+        </div>
+        <div style="font-size:0.85rem;color:#1F2937;margin-top:10px;white-space:pre-line;" id="detailNotes">—</div>
+        <div class="detail-actions">
+          <button type="button" class="btn btn-accent" id="btnOpenInInterventions">Ouvrir dans Interventions</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEYS = ['alveole_interventions', 'interventions', 'alveoleInterventions'];
+
+      const agendaState = {
+        view: 'week',
+        cursorDate: new Date(),
+        selectedIntervention: null,
+        interventions: []
+      };
+
+      function toDateKey(dateObj) {
+        const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+
+      function normalizeIntervention(raw, index) {
+        if (!raw || typeof raw !== 'object') return null;
+
+        const rawDate = raw.date || raw.dateIntervention || raw.scheduledDate || raw.start || raw.day || '';
+        let dateKey = '';
+        let timeLabel = raw.heure || raw.time || raw.horaire || '';
+
+        if (typeof rawDate === 'string' && rawDate.trim()) {
+          const trimmed = rawDate.trim();
+          const isoMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})(?:[T\s](\d{2}:\d{2}))?/);
+          if (isoMatch) {
+            dateKey = isoMatch[1];
+            if (!timeLabel && isoMatch[2]) timeLabel = isoMatch[2];
+          } else {
+            const frMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+            if (frMatch) {
+              dateKey = `${frMatch[3]}-${frMatch[2]}-${frMatch[1]}`;
+            } else {
+              const parsed = new Date(trimmed);
+              if (!Number.isNaN(parsed.getTime())) {
+                dateKey = toDateKey(parsed);
+              }
+            }
+          }
+        }
+
+        if (!dateKey) {
+          dateKey = toDateKey(new Date());
+        }
+
+        const title =
+          raw.titre ||
+          raw.title ||
+          raw.prestation ||
+          raw.objet ||
+          `Intervention #${index + 1}`;
+
+        const clientName =
+          raw.client ||
+          raw.nomClient ||
+          raw.clientName ||
+          raw.nom ||
+          '';
+
+        const addressParts = [
+          raw.adresse || raw.address || raw.lieu || '',
+          raw.codePostal || raw.postalCode || raw.cp || '',
+          raw.ville || raw.city || ''
+        ]
+          .map((p) => String(p || '').trim())
+          .filter(Boolean);
+
+        const address =
+          addressParts.length > 1 && addressParts[0].includes(addressParts[1])
+            ? addressParts[0]
+            : addressParts.join(' ');
+
+        const notes = raw.notes || raw.description || raw.commentaire || raw.details || '';
+        const statusRaw = String(raw.statut || raw.status || raw.etat || '').toLowerCase();
+
+        let statusKey = 'todo';
+        let statusLabel = 'À faire';
+
+        if (
+          raw.termine === true ||
+          raw.completed === true ||
+          statusRaw.includes('fait') ||
+          statusRaw.includes('termin') ||
+          statusRaw.includes('valid') ||
+          statusRaw.includes('pay') ||
+          statusRaw.includes('done')
+        ) {
+          statusKey = 'done';
+          statusLabel = 'Fait';
+        } else if (
+          statusRaw.includes('cours') ||
+          statusRaw.includes('progress') ||
+          statusRaw.includes('actif') ||
+          statusRaw.includes('chantier')
+        ) {
+          statusKey = 'progress';
+          statusLabel = 'En cours';
+        } else if (statusRaw.trim()) {
+          statusLabel = String(raw.statut || raw.status || raw.etat).trim();
+        }
+
+        return {
+          id: raw.id || `int-${index}`,
+          title: String(title),
+          clientName: String(clientName),
+          address: String(address),
+          dateKey,
+          timeLabel: String(timeLabel),
+          notes: String(notes),
+          statusKey,
+          statusLabel,
+          raw
+        };
+      }
+
+      function loadInterventions() {
+        try {
+          for (let i = 0; i < STORAGE_KEYS.length; i++) {
+            const key = STORAGE_KEYS[i];
+            const val = localStorage.getItem(key);
+            if (val) {
+              const parsed = JSON.parse(val);
+              if (Array.isArray(parsed)) {
+                agendaState.interventions = parsed
+                  .map((item, idx) => normalizeIntervention(item, idx))
+                  .filter(Boolean);
+                return;
+              }
+            }
+          }
+        } catch (err) {
+          // Lecture sécurisée si localStorage est restreint
+        }
+        agendaState.interventions = [];
+      }
+
+      function getInterventionsForDate(dateKey) {
+        return agendaState.interventions
+          .filter((item) => item.dateKey === dateKey)
+          .sort((a, b) => (a.timeLabel || '99:99').localeCompare(b.timeLabel || '99:99'));
+      }
+
+      function openDetail(item) {
+        agendaState.selectedIntervention = item;
+        const box = document.getElementById('interventionDetailBox');
+        if (!box) return;
+        const displayName = item.clientName || item.title;
+        const titleEl = document.getElementById('detailTitle');
+        titleEl.textContent = displayName;
+        titleEl.style.color =
+          item.statusKey === 'done'
+            ? '#15803D'
+            : item.statusKey === 'progress'
+              ? '#C2410C'
+              : '#B91C1C';
+
+        const metaParts = [
+          `Intervention : ${item.title}`,
+          `Date : ${item.dateKey}`,
+          item.timeLabel ? `Heure : ${item.timeLabel}` : null,
+          item.address ? `Adresse : ${item.address}` : null,
+          `Statut : ${item.statusLabel}`
+        ].filter(Boolean);
+        document.getElementById('detailSub').textContent = metaParts.join(' • ');
+        document.getElementById('detailNotes').textContent = item.notes || 'Aucune note complémentaire.';
+        box.classList.add('visible');
+      }
+
+      function getWeekStartMonday(dateObj) {
+        const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+        const day = d.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        d.setDate(d.getDate() + diff);
+        return d;
+      }
+
+      function updatePeriodLabel() {
+        const labelEl = document.getElementById('currentPeriodLabel');
+        if (!labelEl) return;
+        const d = agendaState.cursorDate;
+
+        if (agendaState.view === 'day') {
+          labelEl.textContent = d.toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          });
+        } else if (agendaState.view === 'week') {
+          const start = getWeekStartMonday(d);
+          const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+          labelEl.textContent = `Semaine du ${start.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} au ${end.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+        } else {
+          labelEl.textContent = d.toLocaleDateString('fr-FR', {
+            month: 'long',
+            year: 'numeric'
+          });
+        }
+      }
+
+      function renderDayView(container) {
+        const key = toDateKey(agendaState.cursorDate);
+        const items = getInterventionsForDate(key);
+
+        if (items.length === 0) {
+          container.innerHTML = `<div class="empty-state">Aucune intervention prévue le <strong>${key}</strong>.</div>`;
+          return;
+        }
+
+        const list = document.createElement('div');
+        list.className = 'day-list';
+
+        items.forEach((item) => {
+          const personOrTitle = item.clientName ? `${item.clientName} — ${item.title}` : item.title;
+          const addressLine = item.address || 'Adresse non renseignée';
+          const hourLine = item.timeLabel || 'Heure non précisée';
+
+          const card = document.createElement('div');
+          card.className = `intervention-card status-${item.statusKey}`;
+          card.innerHTML = `
+            <div>
+              <div class="intervention-title">${personOrTitle}</div>
+              <div class="intervention-meta">Heure : <strong>${hourLine}</strong> • Adresse : <strong>${addressLine}</strong></div>
+            </div>
+            <span class="badge-status status-${item.statusKey}">${item.statusLabel}</span>
+          `;
+          card.addEventListener('click', () => openDetail(item));
+          list.appendChild(card);
+        });
+
+        container.appendChild(list);
+      }
+
+      function renderWeekView(container) {
+        const start = getWeekStartMonday(agendaState.cursorDate);
+        const todayKey = toDateKey(new Date());
+        const grid = document.createElement('div');
+        grid.className = 'week-grid';
+
+        for (let i = 0; i < 7; i++) {
+          const dayDate = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+          const key = toDateKey(dayDate);
+          const items = getInterventionsForDate(key);
+
+          const col = document.createElement('div');
+          col.className = 'week-col' + (key === todayKey ? ' today' : '');
+
+          const head = document.createElement('div');
+          head.className = 'week-col-head';
+          head.innerHTML = `
+            <span>${dayDate.toLocaleDateString('fr-FR', { weekday: 'short' })}</span>
+            <span>${dayDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</span>
+          `;
+          col.appendChild(head);
+
+          const linesList = document.createElement('div');
+          linesList.className = 'week-lines-list';
+
+          if (items.length === 0) {
+            const empty = document.createElement('div');
+            empty.style.cssText = 'font-size:0.75rem;color:#6B7280;padding:6px 0;';
+            empty.textContent = 'Aucune intervention';
+            linesList.appendChild(empty);
+          } else {
+            items.forEach((item) => {
+              const nameLabel = item.clientName || item.title;
+              const hourLabel = item.timeLabel || 'Horaire libre';
+              const addrLabel = item.address || 'Adresse non renseignée';
+
+              const line = document.createElement('div');
+              line.className = `week-intervention-line status-${item.statusKey}`;
+              line.innerHTML = `
+                <div class="week-line-top"><span class="week-line-time">${hourLabel}</span> ${nameLabel}</div>
+                <div class="week-line-address">${addrLabel}</div>
+              `;
+              line.addEventListener('click', () => openDetail(item));
+              linesList.appendChild(line);
+            });
+          }
+
+          col.appendChild(linesList);
+          grid.appendChild(col);
+        }
+
+        container.appendChild(grid);
+      }
+
+      function renderMonthView(container) {
+        const weekdays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        const headerRow = document.createElement('div');
+        headerRow.className = 'month-weekdays';
+        weekdays.forEach((w) => {
+          const el = document.createElement('div');
+          el.textContent = w;
+          headerRow.appendChild(el);
+        });
+        container.appendChild(headerRow);
+
+        const year = agendaState.cursorDate.getFullYear();
+        const month = agendaState.cursorDate.getMonth();
+        const firstOfMonth = new Date(year, month, 1);
+        const startGrid = getWeekStartMonday(firstOfMonth);
+        const todayKey = toDateKey(new Date());
+
+        const grid = document.createElement('div');
+        grid.className = 'month-grid';
+
+        for (let cellIdx = 0; cellIdx < 42; cellIdx++) {
+          const cellDate = new Date(startGrid.getFullYear(), startGrid.getMonth(), startGrid.getDate() + cellIdx);
+          const key = toDateKey(cellDate);
+          const isOtherMonth = cellDate.getMonth() !== month;
+          const items = getInterventionsForDate(key);
+
+          const cell = document.createElement('div');
+          cell.className =
+            'month-cell' +
+            (isOtherMonth ? ' other-month' : '') +
+            (key === todayKey ? ' today' : '');
+
+          const numEl = document.createElement('div');
+          numEl.className = 'month-day-num';
+          numEl.textContent = String(cellDate.getDate());
+          cell.appendChild(numEl);
+
+          items.slice(0, 3).forEach((item) => {
+            const capsule = document.createElement('span');
+            capsule.className = `month-capsule status-${item.statusKey}`;
+            const shortLabel = item.timeLabel ? `${item.timeLabel} • ${item.clientName || item.title}` : (item.clientName || item.title);
+            capsule.textContent = shortLabel;
+            capsule.addEventListener('click', (e) => {
+              e.stopPropagation();
+              openDetail(item);
+            });
+            cell.appendChild(capsule);
+          });
+
+          if (items.length > 3) {
+            const more = document.createElement('span');
+            more.className = 'month-capsule';
+            more.textContent = `+${items.length - 3}`;
+            cell.appendChild(more);
+          }
+
+          cell.addEventListener('click', () => {
+            agendaState.cursorDate = cellDate;
+            setView('day');
+          });
+
+          grid.appendChild(cell);
+        }
+
+        container.appendChild(grid);
+      }
+
+      function renderAgenda() {
+        updatePeriodLabel();
+        const container = document.getElementById('agendaCalendarContent');
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (agendaState.view === 'day') {
+          renderDayView(container);
+        } else if (agendaState.view === 'week') {
+          renderWeekView(container);
+        } else {
+          renderMonthView(container);
+        }
+      }
+
+      function setView(newView) {
+        agendaState.view = newView;
+        document.querySelectorAll('.view-btn').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.view === newView);
+        });
+        renderAgenda();
+      }
+
+      function stepPeriod(delta) {
+        const d = agendaState.cursorDate;
+        if (agendaState.view === 'day') {
+          agendaState.cursorDate = new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta);
+        } else if (agendaState.view === 'week') {
+          agendaState.cursorDate = new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta * 7);
+        } else {
+          agendaState.cursorDate = new Date(d.getFullYear(), d.getMonth() + delta, 1);
+        }
+        renderAgenda();
+      }
+
+      function bindAgendaEvents() {
+        document.querySelectorAll('.view-btn').forEach((btn) => {
+          btn.addEventListener('click', () => setView(btn.dataset.view));
+        });
+
+        document.getElementById('btnPrevPeriod').addEventListener('click', () => stepPeriod(-1));
+        document.getElementById('btnNextPeriod').addEventListener('click', () => stepPeriod(1));
+        document.getElementById('btnToday').addEventListener('click', () => {
+          agendaState.cursorDate = new Date();
+          renderAgenda();
+        });
+
+        document.getElementById('btnRefreshInterventions').addEventListener('click', () => {
+          loadInterventions();
+          renderAgenda();
+        });
+
+        document.getElementById('btnCloseDetail').addEventListener('click', () => {
+          document.getElementById('interventionDetailBox').classList.remove('visible');
+        });
+
+        document.getElementById('btnOpenInInterventions').addEventListener('click', () => {
+          const candidateButtons = Array.from(document.querySelectorAll('button, a'));
+          const targetTab = candidateButtons.find((el) => {
+            if (el.closest('#alveoleAgendaApp')) return false;
+            const txt = (el.textContent || '').trim().toLowerCase();
+            return txt === 'interventions' || txt.startsWith('intervention');
+          });
+          if (targetTab) {
+            targetTab.click();
+          }
+        });
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        loadInterventions();
+        bindAgendaEvents();
+        renderAgenda();
+      });
+    })();
+  </script>
+</body>
+</html>
