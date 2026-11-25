@@ -3804,52 +3804,53 @@ url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMExce
         .replace(/"/g, '&quot;');
     }
   </script>
-</script>
-   <script>
-   (function () {
-     // 1. Nettoie tout ancien bouton flottant...
-   ...
-   })();
-   </script>
-   </body></html>
-      if (!/facture/i.test(el.textContent || '')) return false;
-      const cls = (el.className || '').toString();
-      return el.getAttribute('aria-selected') === 'true' || /active|bg-yellow|text-yellow|border-yellow/i.test(cls);
-    });
-    if (activeBtn) return true;
+<script>
+(function () {
+  document.querySelectorAll('button').forEach((b) => {
+    if (b.textContent && b.textContent.trim() === 'Devis & Factures' && b.style.position === 'fixed') {
+      b.remove();
+    }
+  });
 
-    // Sinon vérifie si un bloc visible contient "Facture" et un champ/bouton de facture
-    return Array.from(document.querySelectorAll('section, div, main')).some((el) => {
-      if (el.id === 'alveole-devis-factures-section') return false;
-      const st = window.getComputedStyle(el);
-      if (st.display === 'none' || st.visibility === 'hidden' || el.offsetHeight < 100) return false;
-      const t = el.textContent || '';
-      return /facture/i.test(t) && (/client/i.test(t) || /imprimer/i.test(t) || /payée/i.test(t) || /montant/i.test(t));
+  function getFactureTarget() {
+    const factureNav = Array.from(document.querySelectorAll('button, [role="tab"], a')).find((el) => {
+      if (el.closest('#alveole-devis-factures-section')) return false;
+      return /^\s*facture\s*$/i.test(el.textContent || '');
     });
-  }
 
-  function findFactureContainer() {
-    const candidates = Array.from(document.querySelectorAll('section, div, main')).filter((el) => {
-      if (el.id === 'alveole-devis-factures-section') return false;
+    const isFactureTabSelected = factureNav && (
+      factureNav.getAttribute('aria-selected') === 'true' ||
+      /active|bg-yellow|text-yellow|border-yellow|text-black|bg-amber/i.test((factureNav.className || '').toString())
+    );
+
+    const blocks = Array.from(document.querySelectorAll('main, section, div')).filter((el) => {
+      if (el.id === 'alveole-devis-factures-section' || el.closest('#alveole-devis-factures-section')) return false;
       const st = window.getComputedStyle(el);
-      if (st.display === 'none' || st.visibility === 'hidden' || el.offsetHeight < 100) return false;
-      const t = el.textContent || '';
-      return /facture/i.test(t) && (/client/i.test(t) || /imprimer/i.test(t) || /payée/i.test(t) || /montant/i.test(t));
+      if (st.display === 'none' || st.visibility === 'hidden' || el.offsetHeight < 120) return false;
+      const txt = el.textContent || '';
+      return /facture/i.test(txt) && (/client/i.test(txt) || /imprimer/i.test(txt) || /payée/i.test(txt) || /intervention/i.test(txt));
     });
-    // Prend le conteneur le plus précis (le plus petit qui contient les infos de facture)
-    candidates.sort((a, b) => a.innerHTML.length - b.innerHTML.length);
-    return candidates[0] || null;
+
+    if (!isFactureTabSelected && blocks.length === 0) return null;
+
+    blocks.sort((a, b) => a.innerHTML.length - b.innerHTML.length);
+    return blocks[0] || document.querySelector('main') || null;
   }
 
   function buildWidget() {
     const wrapper = document.createElement('div');
     wrapper.id = 'alveole-devis-factures-section';
-    wrapper.style.cssText = 'margin:18px 0 80px;padding:16px;border-radius:16px;background:#141417;border:1px solid #27272A;color:#FAFAFA;font-family:Inter,Arial,sans-serif;clear:both;';
+    wrapper.style.cssText = 'margin:20px 0 96px;padding:16px;border-radius:16px;background:#141417;border:1px solid #27272A;color:#FAFAFA;font-family:Inter,Arial,sans-serif;clear:both;position:relative;z-index:20;';
+
+    ['click', 'mousedown', 'touchstart', 'focusin', 'input', 'keydown'].forEach((evtName) => {
+      wrapper.addEventListener(evtName, (e) => e.stopPropagation());
+    });
+
     wrapper.innerHTML = `
       <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;">
         <div>
           <div style="font-size:15px;font-weight:800;color:#FACC15;">Devis &amp; Factures</div>
-          <div style="font-size:12px;color:#A1A1AA;">Créez un devis ou une facture et calculez le total TTC.</div>
+          <div style="font-size:12px;color:#A1A1AA;">Basculez entre Devis et Facture et calculez le total TTC.</div>
         </div>
         <div style="display:inline-flex;gap:6px;background:#09090B;padding:4px;border-radius:10px;border:1px solid #27272A;">
           <button type="button" id="dfModeDevisBtn" style="border:none;border-radius:7px;padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer;background:#FACC15;color:#09090B;">Devis</button>
@@ -3969,28 +3970,29 @@ url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMExce
     return wrapper;
   }
 
-  function syncWidget() {
-    const existing = document.getElementById('alveole-devis-factures-section');
-    const active = isFactureActive();
+  function syncWidget(e) {
+    if (e && e.target && e.target.closest && e.target.closest('#alveole-devis-factures-section')) {
+      return;
+    }
 
-    if (!active) {
+    const existing = document.getElementById('alveole-devis-factures-section');
+    const target = getFactureTarget();
+
+    if (!target) {
       if (existing) existing.style.display = 'none';
       return;
     }
 
-    const container = findFactureContainer();
-    if (!container) return;
-
     const widget = existing || buildWidget();
     widget.style.display = 'block';
-    if (widget.parentElement !== container) {
-      container.appendChild(widget);
+    if (!target.contains(widget)) {
+      target.appendChild(widget);
     }
   }
 
-  document.addEventListener('click', () => setTimeout(syncWidget, 80));
-  window.addEventListener('DOMContentLoaded', () => setTimeout(syncWidget, 200));
-  setTimeout(syncWidget, 400);
+  document.addEventListener('click', (e) => setTimeout(() => syncWidget(e), 90));
+  window.addEventListener('DOMContentLoaded', () => setTimeout(() => syncWidget(), 250));
+  setTimeout(() => syncWidget(), 500);
 })();
 </script>
 </body></html>
