@@ -4423,8 +4423,315 @@ url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMExce
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
+        
   } else {
     boot();
   }
 })();
 </script>
+<!-- ... existing code ... -->
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  </script>
+<script>
+(function () {
+  function initAlveoleDevisFactures() {
+    if (document.getElementById('alveole-devis-factures-section')) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.id = 'alveole-devis-factures-section';
+    wrapper.style.cssText = 'margin:16px auto 96px;padding:14px;border-radius:16px;background:#141417;border:1px solid #27272A;color:#FAFAFA;font-family:Inter,Arial,sans-serif;width:100%;max-width:100%;box-sizing:border-box;display:none;position:relative;z-index:20;';
+
+    ['click', 'mousedown', 'touchstart', 'focusin', 'input', 'keydown'].forEach((evtName) => {
+      wrapper.addEventListener(evtName, (e) => e.stopPropagation());
+    });
+
+    wrapper.innerHTML = `
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#FACC15;">Devis &amp; Factures</div>
+          <div style="font-size:12px;color:#A1A1AA;">Basculez entre Devis et Facture et calculez le total TTC.</div>
+        </div>
+        <div style="display:inline-flex;gap:4px;background:#09090B;padding:4px;border-radius:10px;border:1px solid #27272A;">
+          <button type="button" id="dfModeDevisBtn" style="border:none;border-radius:7px;padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer;background:#FACC15;color:#09090B;">Devis</button>
+          <button type="button" id="dfModeFactureBtn" style="border:none;border-radius:7px;padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer;background:transparent;color:#A1A1AA;">Facture</button>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:11px;color:#D4D4D8;margin-bottom:3px;">Numéro</label>
+          <input id="dfNumberInput" type="text" value="DEV-2026-001" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:13px;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#D4D4D8;margin-bottom:3px;">Client</label>
+          <input id="dfClientInput" type="text" placeholder="Nom du client" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:13px;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#D4D4D8;margin-bottom:3px;">E-mail du client</label>
+          <input id="dfEmailInput" type="email" placeholder="client@exemple.fr" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:13px;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#D4D4D8;margin-bottom:3px;">TVA (%)</label>
+          <input id="dfTvaInput" type="number" min="0" max="30" step="0.5" value="20" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:13px;box-sizing:border-box;" />
+        </div>
+      </div>
+
+      <div id="dfLinesBox" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;width:100%;"></div>
+
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding-top:10px;border-top:1px solid #27272A;">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <button type="button" id="dfAddLineBtn" style="border:1px solid #3F3F46;border-radius:8px;padding:7px 12px;background:#1C1C21;color:#FAFAFA;font-weight:700;font-size:12px;cursor:pointer;">+ Ajouter une ligne</button>
+          <button type="button" id="dfSendMailBtn" style="border:none;border-radius:8px;padding:7px 12px;background:#FACC15;color:#09090B;font-weight:800;font-size:12px;cursor:pointer;">✉ Envoyer par mail</button>
+          <button type="button" id="dfCopyTextBtn" style="border:1px solid #3F3F46;border-radius:8px;padding:7px 12px;background:#1C1C21;color:#FAFAFA;font-weight:700;font-size:12px;cursor:pointer;">Copier le texte</button>
+        </div>
+        <div style="text-align:right;font-size:13px;">
+          <div>HT : <strong id="dfSubtotalText">0,00 €</strong></div>
+          <div style="color:#FACC15;font-size:15px;">Total TTC : <strong id="dfTotalTtcText">0,00 €</strong></div>
+        </div>
+      </div>
+      <div id="dfMailFeedback" style="margin-top:8px;font-size:12px;color:#FACC15;font-weight:700;"></div>
+    `;
+
+    let mode = 'devis';
+    let lines = [{ desc: 'Prestation intervention', qty: 1, price: 80 }];
+    const fmt = (n) => (Number.isFinite(n) ? n : 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+    function recalc() {
+      const tva = parseFloat(wrapper.querySelector('#dfTvaInput').value) || 0;
+      const ht = lines.reduce((sum, l) => sum + (parseFloat(l.qty) || 0) * (parseFloat(l.price) || 0), 0);
+      const ttc = ht * (1 + tva / 100);
+      wrapper.querySelector('#dfSubtotalText').textContent = fmt(ht);
+      wrapper.querySelector('#dfTotalTtcText').textContent = fmt(ttc);
+    }
+
+    function renderLines() {
+      const box = wrapper.querySelector('#dfLinesBox');
+      box.innerHTML = '';
+      lines.forEach((line, idx) => {
+        const card = document.createElement('div');
+        card.style.cssText = 'display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:10px;background:#18181B;border:1px solid #27272A;width:100%;box-sizing:border-box;';
+
+        const desc = document.createElement('input');
+        desc.type = 'text';
+        desc.value = line.desc;
+        desc.placeholder = 'Désignation';
+        desc.style.cssText = 'width:100%;padding:7px 9px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;box-sizing:border-box;';
+        desc.oninput = (e) => { lines[idx].desc = e.target.value; };
+
+        const bottomRow = document.createElement('div');
+        bottomRow.style.cssText = 'display:flex;align-items:center;gap:6px;width:100%;box-sizing:border-box;';
+
+        const qty = document.createElement('input');
+        qty.type = 'number';
+        qty.min = '0';
+        qty.step = '0.5';
+        qty.value = line.qty;
+        qty.placeholder = 'Qté';
+        qty.style.cssText = 'flex:1;min-width:0;padding:7px 6px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;box-sizing:border-box;';
+        qty.oninput = (e) => { lines[idx].qty = parseFloat(e.target.value) || 0; recalc(); };
+
+        const price = document.createElement('input');
+        price.type = 'number';
+        price.min = '0';
+        price.step = '0.01';
+        price.value = line.price;
+        price.placeholder = 'Prix HT';
+        price.style.cssText = 'flex:1.2;min-width:0;padding:7px 6px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;box-sizing:border-box;';
+        price.oninput = (e) => { lines[idx].price = parseFloat(e.target.value) || 0; recalc(); };
+
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.textContent = '✕';
+        del.style.cssText = 'width:32px;height:32px;flex:0 0 32px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);color:#FCA5A5;font-weight:700;font-size:12px;cursor:pointer;';
+        del.onclick = () => {
+          if (lines.length > 1) {
+            lines.splice(idx, 1);
+            renderLines();
+            recalc();
+          }
+        };
+
+        bottomRow.append(qty, price, del);
+        card.append(desc, bottomRow);
+        box.appendChild(card);
+      });
+      recalc();
+    }
+
+    function setMode(newMode) {
+      mode = newMode;
+      const numEl = wrapper.querySelector('#dfNumberInput');
+      if (mode === 'facture' && numEl.value.startsWith('DEV-')) numEl.value = numEl.value.replace(/^DEV-/, 'FAC-');
+      if (mode === 'devis' && numEl.value.startsWith('FAC-')) numEl.value = numEl.value.replace(/^FAC-/, 'DEV-');
+      const bDev = wrapper.querySelector('#dfModeDevisBtn');
+      const bFac = wrapper.querySelector('#dfModeFactureBtn');
+      bDev.style.background = mode === 'devis' ? '#FACC15' : 'transparent';
+      bDev.style.color = mode === 'devis' ? '#09090B' : '#A1A1AA';
+      bFac.style.background = mode === 'facture' ? '#FACC15' : 'transparent';
+      bFac.style.color = mode === 'facture' ? '#09090B' : '#A1A1AA';
+    }
+
+    wrapper.querySelector('#dfModeDevisBtn').onclick = () => setMode('devis');
+    wrapper.querySelector('#dfModeFactureBtn').onclick = () => setMode('facture');
+    wrapper.querySelector('#dfTvaInput').oninput = recalc;
+    wrapper.querySelector('#dfAddLineBtn').onclick = () => {
+      lines.push({ desc: 'Nouvelle ligne', qty: 1, price: 50 });
+      renderLines();
+    };
+
+    function buildMailData() {
+      const docLabel = mode === 'facture' ? 'Facture' : 'Devis';
+      const numVal = (wrapper.querySelector('#dfNumberInput').value || '').trim() || '—';
+      const clientVal = (wrapper.querySelector('#dfClientInput').value || '').trim();
+      const emailVal = (wrapper.querySelector('#dfEmailInput').value || '').trim();
+      const tva = parseFloat(wrapper.querySelector('#dfTvaInput').value) || 0;
+      const ht = lines.reduce((sum, l) => sum + (parseFloat(l.qty) || 0) * (parseFloat(l.price) || 0), 0);
+      const ttc = ht * (1 + tva / 100);
+
+      const linesDetails = lines
+        .map((l) => `- ${l.desc || 'Prestation'} : ${l.qty} x ${fmt(parseFloat(l.price) || 0)} = ${fmt((parseFloat(l.qty) || 0) * (parseFloat(l.price) || 0))}`)
+        .join('\n');
+
+      const subjectText = `${docLabel} n° ${numVal} — Alvéole`;
+      const bodyText =
+        `Bonjour${clientVal ? ' ' + clientVal : ''},\n\n` +
+        `Veuillez trouver ci-dessous le détail de votre ${docLabel.toLowerCase()} n° ${numVal} :\n\n` +
+        `${linesDetails}\n\n` +
+        `Total HT : ${fmt(ht)}\n` +
+        `TVA (${tva} %) : ${fmt(ttc - ht)}\n` +
+        `Total TTC : ${fmt(ttc)}\n\n` +
+        `Cordialement,\nAlvéole`;
+
+      return { emailVal, subjectText, bodyText };
+    }
+
+    function copyTextFallback(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (_) {}
+      document.body.removeChild(ta);
+    }
+
+    wrapper.querySelector('#dfCopyTextBtn').onclick = () => {
+      const { subjectText, bodyText } = buildMailData();
+      copyTextFallback(`${subjectText}\n\n${bodyText}`);
+      wrapper.querySelector('#dfMailFeedback').textContent = 'Texte copié dans le presse-papiers.';
+    };
+
+    wrapper.querySelector('#dfSendMailBtn').onclick = async () => {
+      const { emailVal, subjectText, bodyText } = buildMailData();
+      copyTextFallback(`${subjectText}\n\n${bodyText}`);
+
+      // Ouverture du partage natif sur mobile si disponible
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: subjectText,
+            text: (emailVal ? `Destinataire : ${emailVal}\n\n` : '') + bodyText
+          });
+          wrapper.querySelector('#dfMailFeedback').textContent = 'Partage ouvert (texte aussi copié).';
+          return;
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
+      }
+
+      // Ouverture directe du client mail via mailto
+      const mailtoUrl = `mailto:${encodeURIComponent(emailVal)}?subject=${encodeURIComponent(subjectText)}&body=${encodeURIComponent(bodyText)}`;
+      window.location.assign(mailtoUrl);
+      wrapper.querySelector('#dfMailFeedback').textContent = 'Messagerie ouverte (texte aussi copié dans le presse-papiers).';
+    };
+
+    renderLines();
+
+    const host = document.querySelector('main') || document.body;
+    host.appendChild(wrapper);
+
+    function checkVisibility() {
+      const pageText = (document.body.innerText || '').toLowerCase();
+      const inDocView =
+        pageText.includes('facture') ||
+        pageText.includes('devis') ||
+        pageText.includes('générer') ||
+        pageText.includes('imprimer') ||
+        pageText.includes('payée') ||
+        pageText.includes('montant') ||
+        pageText.includes('prestation');
+      wrapper.style.display = inDocView ? 'block' : 'none';
+    }
+
+    document.addEventListener('click', () => setTimeout(checkVisibility, 100));
+    setInterval(checkVisibility, 600);
+    checkVisibility();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAlveoleDevisFactures);
+  } else {
+    initAlveoleDevisFactures();
+  }
+})();
+</script>
+<script>
+(function () {
+  // Ouvre directement l'onglet Interventions et ferme l'écran Google Sheets / mode mobile au démarrage
+  let attempts = 0;
+
+  function dismissSheetsAndOpenInterventions() {
+    attempts += 1;
+
+    // 1. Masquer ou fermer toute modale / écran lié à Google Sheets ou au choix mobile
+    const candidates = document.querySelectorAll('div, section, dialog, aside, [role="dialog"], .modal, .overlay');
+    candidates.forEach((el) => {
+      if (el.id === 'alveole-devis-factures-section' || el.id === 'alveole-agenda-drawer') return;
+      if (el.closest('#alveole-devis-factures-section') || el.closest('#alveole-agenda-drawer')) return;
+
+      const txt = (el.textContent || '').toLowerCase();
+      const mentionsSheetsOrMobileSetup =
+        (txt.includes('google sheets') || txt.includes('sheets')) &&
+        (txt.includes('connexion') || txt.includes('connecter') || txt.includes('mobile') || txt.includes('api') || txt.includes('url'));
+
+      if (mentionsSheetsOrMobileSetup && txt.length < 1800) {
+        // Tente d'abord de cliquer sur un bouton fermer / ignorer / continuer si présent
+        const closeBtn = el.querySelector('button[aria-label*="close" i], button[aria-label*="fermer" i], .close, .btn-close');
+        if (closeBtn && !closeBtn.dataset.alveoleAutoClicked) {
+          closeBtn.dataset.alveoleAutoClicked = '1';
+          closeBtn.click();
+        }
+        el.style.setProperty('display', 'none', 'important');
+      }
+    });
+
+    // 2. Sélectionner l'onglet Interventions dès qu'il est disponible
+    const tabButtons = Array.from(document.querySelectorAll('button, a, [role="tab"]'));
+    const interventionsTab = tabButtons.find((btn) => {
+      if (btn.closest('#alveole-devis-factures-section') || btn.closest('#alveole-agenda-drawer')) return false;
+      const label = (btn.textContent || '').trim().toLowerCase();
+      return label === 'interventions' || label === 'intervention';
+    });
+
+    if (interventionsTab && !interventionsTab.dataset.alveoleOpenedOnce) {
+      interventionsTab.dataset.alveoleOpenedOnce = '1';
+      interventionsTab.click();
+    }
+
+    if (attempts >= 25) {
+      clearInterval(timer);
+    }
+  }
+
+  const timer = setInterval(dismissSheetsAndOpenInterventions, 200);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', dismissSheetsAndOpenInterventions);
+  } else {
+    dismissSheetsAndOpenInterventions();
+  }
+})();
+</script>
+</body></html>
