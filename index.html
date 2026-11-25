@@ -3804,18 +3804,14 @@ url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMExce
         .replace(/"/g, '&quot;');
     }
   </script>
-<script>
-(function () {
-  // 1. Nettoie tout ancien bouton flottant s'il reste en mémoire
-  document.querySelectorAll('button').forEach((b) => {
-    if (b.textContent && b.textContent.trim() === 'Devis & Factures' && b.style.position === 'fixed') {
-      b.remove();
-    }
-  });
-
-  function isFactureActive() {
-    // Vérifie si un bouton/onglet "Facture" est actif ou si le contenu Facture est visible
-    const activeBtn = Array.from(document.querySelectorAll('button, [role="tab"], a')).find((el) => {
+</script>
+   <script>
+   (function () {
+     // 1. Nettoie tout ancien bouton flottant...
+   ...
+   })();
+   </script>
+   </body></html>
       if (!/facture/i.test(el.textContent || '')) return false;
       const cls = (el.className || '').toString();
       return el.getAttribute('aria-selected') === 'true' || /active|bg-yellow|text-yellow|border-yellow/i.test(cls);
