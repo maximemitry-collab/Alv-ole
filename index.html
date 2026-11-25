@@ -3806,74 +3806,45 @@ url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMExce
   </script>
 <script>
 (function () {
-  document.querySelectorAll('button').forEach((b) => {
-    if (b.textContent && b.textContent.trim() === 'Devis & Factures' && b.style.position === 'fixed') {
-      b.remove();
-    }
-  });
+  function initAlveoleDevisFactures() {
+    if (document.getElementById('alveole-devis-factures-section')) return;
 
-  function getFactureTarget() {
-    const factureNav = Array.from(document.querySelectorAll('button, [role="tab"], a')).find((el) => {
-      if (el.closest('#alveole-devis-factures-section')) return false;
-      return /^\s*facture\s*$/i.test(el.textContent || '');
-    });
-
-    const isFactureTabSelected = factureNav && (
-      factureNav.getAttribute('aria-selected') === 'true' ||
-      /active|bg-yellow|text-yellow|border-yellow|text-black|bg-amber/i.test((factureNav.className || '').toString())
-    );
-
-    const blocks = Array.from(document.querySelectorAll('main, section, div')).filter((el) => {
-      if (el.id === 'alveole-devis-factures-section' || el.closest('#alveole-devis-factures-section')) return false;
-      const st = window.getComputedStyle(el);
-      if (st.display === 'none' || st.visibility === 'hidden' || el.offsetHeight < 120) return false;
-      const txt = el.textContent || '';
-      return /facture/i.test(txt) && (/client/i.test(txt) || /imprimer/i.test(txt) || /payée/i.test(txt) || /intervention/i.test(txt));
-    });
-
-    if (!isFactureTabSelected && blocks.length === 0) return null;
-
-    blocks.sort((a, b) => a.innerHTML.length - b.innerHTML.length);
-    return blocks[0] || document.querySelector('main') || null;
-  }
-
-  function buildWidget() {
     const wrapper = document.createElement('div');
     wrapper.id = 'alveole-devis-factures-section';
-    wrapper.style.cssText = 'margin:20px 0 96px;padding:16px;border-radius:16px;background:#141417;border:1px solid #27272A;color:#FAFAFA;font-family:Inter,Arial,sans-serif;clear:both;position:relative;z-index:20;';
+    wrapper.style.cssText = 'margin:16px auto 96px;padding:14px;border-radius:16px;background:#141417;border:1px solid #27272A;color:#FAFAFA;font-family:Inter,Arial,sans-serif;width:100%;max-width:100%;box-sizing:border-box;display:none;position:relative;z-index:20;';
 
     ['click', 'mousedown', 'touchstart', 'focusin', 'input', 'keydown'].forEach((evtName) => {
       wrapper.addEventListener(evtName, (e) => e.stopPropagation());
     });
 
     wrapper.innerHTML = `
-      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;">
         <div>
           <div style="font-size:15px;font-weight:800;color:#FACC15;">Devis &amp; Factures</div>
           <div style="font-size:12px;color:#A1A1AA;">Basculez entre Devis et Facture et calculez le total TTC.</div>
         </div>
-        <div style="display:inline-flex;gap:6px;background:#09090B;padding:4px;border-radius:10px;border:1px solid #27272A;">
+        <div style="display:inline-flex;gap:4px;background:#09090B;padding:4px;border-radius:10px;border:1px solid #27272A;">
           <button type="button" id="dfModeDevisBtn" style="border:none;border-radius:7px;padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer;background:#FACC15;color:#09090B;">Devis</button>
           <button type="button" id="dfModeFactureBtn" style="border:none;border-radius:7px;padding:6px 12px;font-weight:700;font-size:12px;cursor:pointer;background:transparent;color:#A1A1AA;">Facture</button>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;">
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
         <div>
-          <label style="display:block;font-size:11px;color:#D4D4D8;margin-bottom:4px;">Numéro</label>
-          <input id="dfNumberInput" type="text" value="DEV-2026-001" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:13px;" />
+          <label style="display:block;font-size:11px;color:#D4D4D8;margin-bottom:3px;">Numéro</label>
+          <input id="dfNumberInput" type="text" value="DEV-2026-001" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:13px;box-sizing:border-box;" />
         </div>
         <div>
-          <label style="display:block;font-size:11px;color:#D4D4D8;margin-bottom:4px;">Client</label>
-          <input id="dfClientInput" type="text" placeholder="Nom du client" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:13px;" />
+          <label style="display:block;font-size:11px;color:#D4D4D8;margin-bottom:3px;">Client</label>
+          <input id="dfClientInput" type="text" placeholder="Nom du client" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:13px;box-sizing:border-box;" />
         </div>
         <div>
-          <label style="display:block;font-size:11px;color:#D4D4D8;margin-bottom:4px;">TVA (%)</label>
-          <input id="dfTvaInput" type="number" min="0" max="30" step="0.5" value="20" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:13px;" />
+          <label style="display:block;font-size:11px;color:#D4D4D8;margin-bottom:3px;">TVA (%)</label>
+          <input id="dfTvaInput" type="number" min="0" max="30" step="0.5" value="20" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:13px;box-sizing:border-box;" />
         </div>
       </div>
 
-      <div id="dfLinesBox" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
+      <div id="dfLinesBox" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;width:100%;"></div>
 
       <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding-top:10px;border-top:1px solid #27272A;">
         <button type="button" id="dfAddLineBtn" style="border:1px solid #3F3F46;border-radius:8px;padding:7px 12px;background:#1C1C21;color:#FAFAFA;font-weight:700;font-size:12px;cursor:pointer;">+ Ajouter une ligne</button>
@@ -3886,7 +3857,6 @@ url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMExce
 
     let mode = 'devis';
     let lines = [{ desc: 'Prestation intervention', qty: 1, price: 80 }];
-
     const fmt = (n) => (Number.isFinite(n) ? n : 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
     function recalc() {
@@ -3901,22 +3871,26 @@ url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMExce
       const box = wrapper.querySelector('#dfLinesBox');
       box.innerHTML = '';
       lines.forEach((line, idx) => {
-        const row = document.createElement('div');
-        row.style.cssText = 'display:grid;grid-template-columns:2fr 0.7fr 0.9fr auto;gap:6px;align-items:center;';
+        const card = document.createElement('div');
+        card.style.cssText = 'display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:10px;background:#18181B;border:1px solid #27272A;width:100%;box-sizing:border-box;';
 
         const desc = document.createElement('input');
         desc.type = 'text';
         desc.value = line.desc;
         desc.placeholder = 'Désignation';
-        desc.style.cssText = 'padding:7px 9px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;';
+        desc.style.cssText = 'width:100%;padding:7px 9px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;box-sizing:border-box;';
         desc.oninput = (e) => { lines[idx].desc = e.target.value; };
+
+        const bottomRow = document.createElement('div');
+        bottomRow.style.cssText = 'display:flex;align-items:center;gap:6px;width:100%;box-sizing:border-box;';
 
         const qty = document.createElement('input');
         qty.type = 'number';
         qty.min = '0';
         qty.step = '0.5';
         qty.value = line.qty;
-        qty.style.cssText = 'padding:7px 9px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;';
+        qty.placeholder = 'Qté';
+        qty.style.cssText = 'flex:1;min-width:0;padding:7px 6px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;box-sizing:border-box;';
         qty.oninput = (e) => { lines[idx].qty = parseFloat(e.target.value) || 0; recalc(); };
 
         const price = document.createElement('input');
@@ -3924,51 +3898,14 @@ url:e,reason:"blocked_domain_not_allowlisted"},b.parentOrigin);throw new DOMExce
         price.min = '0';
         price.step = '0.01';
         price.value = line.price;
-        price.style.cssText = 'padding:7px 9px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;';
+        price.placeholder = 'Prix HT';
+        price.style.cssText = 'flex:1.2;min-width:0;padding:7px 6px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;box-sizing:border-box;';
         price.oninput = (e) => { lines[idx].price = parseFloat(e.target.value) || 0; recalc(); };
 
         const del = document.createElement('button');
         del.type = 'button';
         del.textContent = '✕';
-        del.style.cssText = 'padding:7px 9px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);color:#FCA5A5;font-weight:700;font-size:12px;cursor:pointer;';
-        del.onclick = () => {
-          if (lines.length > 1) {
-            lines.splice(idx, 1);
-         function renderLines() {
-function renderLines() {
-      const box = wrapper.querySelector('#dfLinesBox');
-      box.innerHTML = '';
-      lines.forEach((line, idx) => {
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%;max-width:100%;box-sizing:border-box;';
-
-        const desc = document.createElement('input');
-        desc.type = 'text';
-        desc.value = line.desc;
-        desc.placeholder = 'Désignation';
-        desc.style.cssText = 'flex:1 1 140px;min-width:120px;padding:7px 9px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;box-sizing:border-box;';
-        desc.oninput = (e) => { lines[idx].desc = e.target.value; };
-
-        const qty = document.createElement('input');
-        qty.type = 'number';
-        qty.min = '0';
-        qty.step = '0.5';
-        qty.value = line.qty;
-        qty.style.cssText = 'width:62px;flex:0 0 62px;padding:7px 6px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;box-sizing:border-box;';
-        qty.oninput = (e) => { lines[idx].qty = parseFloat(e.target.value) || 0; recalc(); };
-
-        const price = document.createElement('input');
-        price.type = 'number';
-        price.min = '0';
-        price.step = '0.01';
-        price.value = line.price;
-        price.style.cssText = 'width:78px;flex:0 0 78px;padding:7px 6px;border-radius:8px;border:1px solid #323238;background:#1C1C21;color:#FAFAFA;font-size:12px;box-sizing:border-box;';
-        price.oninput = (e) => { lines[idx].price = parseFloat(e.target.value) || 0; recalc(); };
-
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.textContent = '✕';
-        del.style.cssText = 'width:32px;height:32px;flex:0 0 32px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);color:#FCA5A5;font-weight:700;font-size:12px;cursor:pointer;box-sizing:border-box;';
+        del.style.cssText = 'width:32px;height:32px;flex:0 0 32px;border-radius:8px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);color:#FCA5A5;font-weight:700;font-size:12px;cursor:pointer;';
         del.onclick = () => {
           if (lines.length > 1) {
             lines.splice(idx, 1);
@@ -3977,11 +3914,13 @@ function renderLines() {
           }
         };
 
-        row.append(desc, qty, price, del);
-        box.appendChild(row);
+        bottomRow.append(qty, price, del);
+        card.append(desc, bottomRow);
+        box.appendChild(card);
       });
       recalc();
     }
+
     function setMode(newMode) {
       mode = newMode;
       const numEl = wrapper.querySelector('#dfNumberInput');
@@ -4004,32 +3943,32 @@ function renderLines() {
     };
 
     renderLines();
-    return wrapper;
+
+    const host = document.querySelector('main') || document.body;
+    host.appendChild(wrapper);
+
+    function checkVisibility() {
+      const pageText = (document.body.innerText || '').toLowerCase();
+      const inFactureView = pageText.includes('facture') && (
+        pageText.includes('générer') ||
+        pageText.includes('imprimer') ||
+        pageText.includes('payée') ||
+        pageText.includes('montant') ||
+        pageText.includes('prestation')
+      );
+      wrapper.style.display = inFactureView ? 'block' : 'none';
+    }
+
+    document.addEventListener('click', () => setTimeout(checkVisibility, 100));
+    setInterval(checkVisibility, 600);
+    checkVisibility();
   }
 
-  function syncWidget(e) {
-    if (e && e.target && e.target.closest && e.target.closest('#alveole-devis-factures-section')) {
-      return;
-    }
-
-    const existing = document.getElementById('alveole-devis-factures-section');
-    const target = getFactureTarget();
-
-    if (!target) {
-      if (existing) existing.style.display = 'none';
-      return;
-    }
-
-    const widget = existing || buildWidget();
-    widget.style.display = 'block';
-    if (!target.contains(widget)) {
-      target.appendChild(widget);
-    }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAlveoleDevisFactures);
+  } else {
+    initAlveoleDevisFactures();
   }
-
-  document.addEventListener('click', (e) => setTimeout(() => syncWidget(e), 90));
-  window.addEventListener('DOMContentLoaded', () => setTimeout(() => syncWidget(), 250));
-  setTimeout(() => syncWidget(), 500);
 })();
 </script>
 </body></html>
